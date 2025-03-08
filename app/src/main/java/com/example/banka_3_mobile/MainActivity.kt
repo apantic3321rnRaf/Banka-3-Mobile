@@ -23,32 +23,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Banka3MobileTheme {
-                /*Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Banka-3",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }*/
                 Log.d("raf", "pOKRENUO SI ME")
                 AppNavigation()
             }
         }
     }
 }
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-/*
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Banka3MobileTheme {
-        Greeting("Banka-3")
-    }
-}*/
