@@ -8,17 +8,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -70,7 +81,7 @@ fun LoginColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-      //  horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
@@ -80,22 +91,43 @@ fun LoginColumn(
             text = "Login"
         )
         Spacer(modifier = Modifier.height(60.dp))
+        OutlinedTextField(
+            value = state.email,
+            onValueChange = { eventPublisher(LoginContract.LoginUIEvent.TypingEmail(it)) },
+            label = { Text("Email") },
+            isError = state.incorrectEmailFormat,
+            modifier = Modifier.fillMaxWidth(),
+
+            )
         if (state.incorrectEmailFormat) {
             Text(
-                text = "Hello Banka-3 :)",
-                fontWeight = FontWeight.Bold,
+                text = "Invalid email format",
+                color = Color.Red,
                 fontSize = 20.sp,
-         //       modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.align(Alignment.Start)
             )
-            Spacer(modifier = Modifier.height(60.dp))
         }
+
+        OutlinedTextField(
+            value = state.password,
+            onValueChange = { eventPublisher(LoginContract.LoginUIEvent.TypingPassword(it)) },
+
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+
+            )
         Box(modifier = Modifier.fillMaxWidth()) {
             Button(
                 onClick = { eventPublisher(LoginContract.LoginUIEvent.Login) },
-         //       modifier = Modifier.align(Alignment.Center)
             ) {
                 Text("Login")
             }
+        }
+        if (state.response!="") {
+            Text(state.response)
         }
 
     }

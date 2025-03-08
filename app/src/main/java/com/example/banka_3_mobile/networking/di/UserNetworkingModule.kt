@@ -39,7 +39,8 @@ object UserNetworkingModule {
     ): Retrofit {
         Log.d("raf", "Provide retrofit for user")
         return Retrofit.Builder()
-            .baseUrl("http://localhost:8080/api/")
+            //.baseUrl("http://localhost:8080/api/")
+            .baseUrl("http://10.0.2.2:8080/api/")
             .client(okHttpClient)
             .addConverterFactory(AppJson.asConverterFactory("application/json".toMediaType()))
             .build()
