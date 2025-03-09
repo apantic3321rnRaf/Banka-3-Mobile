@@ -36,14 +36,23 @@ class LoginViewModel @Inject constructor(
     }
 
     init {
-        if (accountDataStore.data.value.email == ""
+        Log.d("raf", "Ulazim u init logina")
+        if (accountDataStore.data.value.email == "" ||
+            accountDataStore.data.value.password == ""
             //|| accountDataStore.data.value.fullName == ""
         )
             observeEvents()
-        else setState { copy(
-           // fullName = accountDataStore.data.value.fullName,
-            email = accountDataStore.data.value.email,
-            loggedIn = true) }
+        else {
+
+            setState { copy(
+                // fullName = accountDataStore.data.value.fullName,
+                email = accountDataStore.data.value.email,
+                password = accountDataStore.data.value.password,
+                // TODO dodaj i password
+                loggedIn = true) }
+            updateToken()
+        }
+
     }
 
     private fun observeEvents() {
@@ -70,23 +79,31 @@ class LoginViewModel @Inject constructor(
         if (!checkEmailValidity())
             setState { copy(incorrectEmailFormat = true) }
         else {
+            /**
+             * TODO provera da li je user klijent (da nije admin ili employee)
+             */
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     withContext(Dispatchers.IO) {
-                        /*accountDataStore.updateProfileData(
-                            AccountData(wh
-                                fullName = state.value.fullName,
-                                email = state.value.email,
-                            )
-                        )*/
                         val response =
                             userRepository.login(email = state.value.email,
                                 password = state.value.password)
+                        //if (accountDataStore.data.value.email == ""
+                        //)
                         setState { copy(response = response.token) }
+                        accountDataStore.updateProfileData(
+                            AccountData(
+                                email = state.value.email,
+                                client_id = "1",
+                                token = response.token,
+                                password = state.value.password
+                            )
+                        )
+
 
                     }
+                    setState { copy(loggedIn = true) }
                //     Log.d("raf", "u datastore je zapisano ${profileDataStore.data.value}")
-                //    setState { copy(loggedIn = true) }
                 } catch (e: Exception) {
                     setState { copy(error = e) }
                     Log.e("raf", e.message!!)
@@ -97,6 +114,35 @@ class LoginViewModel @Inject constructor(
 
     private fun checkEmailValidity(): Boolean {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(state.value.email).matches()
+    }
+
+    private fun updateToken() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                withContext(Dispatchers.IO) {
+                    val response =
+                        userRepository.login(email = state.value.email,
+                            password = state.value.password)
+                    Log.d("raf", "Pozvat update token dobijen: ${response.token}")
+                    setState { copy(response = response.token) }
+                    accountDataStore.updateProfileData(
+                        AccountData(
+                            email = state.value.email,
+                            client_id = "1",
+                            token = response.token,
+                            password = state.value.password
+                        )
+                    )
+
+
+                }
+                setState { copy(loggedIn = true) }
+            } catch (e: Exception) {
+                setState { copy(error = e) }
+                Log.e("raf", e.message!!)
+            }
+        }
+
     }
 
 }
