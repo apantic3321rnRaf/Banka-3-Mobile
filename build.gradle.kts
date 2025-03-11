@@ -10,6 +10,7 @@ plugins {
 buildscript {
     repositories {
         mavenCentral()
+        google()
     }
     dependencies {
         val nav_version = "2.8.8"

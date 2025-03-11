@@ -28,20 +28,35 @@ object UserNetworkingModule {
         accountDataStore: AccountDataStore
     ): OkHttpClient {
         return OkHttpClient.Builder()
-            .addInterceptor {
+            /*.addInterceptor {
                 chain ->
-                // Synchronously fetch the token from your datastore
                 val token = runBlocking {
-                    // Adjust this line according to how you store your token.
-                    // For example, if your AccountData data class has a "token" field:
                     accountDataStore.data.first().token
                 }
-                // Build the new request with the Authorization header if token exists
                 val requestBuilder = chain.request().newBuilder()
                 if (!token.isNullOrEmpty()) {
                     requestBuilder.addHeader("Authorization", "Bearer $token")
                 }
                 chain.proceed(requestBuilder.build())
+            }*/
+            .addInterceptor { chain ->
+                val request = chain.request()
+                if (!request.url.encodedPath.contains("auth/login/client") &&
+                    !request.url.encodedPath.contains("auth/check-token")) {
+                    val token = runBlocking {
+                        accountDataStore.data.first().token
+                    }
+                    if (token.isNotEmpty()) {
+                        val newRequest = request.newBuilder()
+                            .addHeader("Authorization", "Bearer $token")
+                            .build()
+                        chain.proceed(newRequest)
+                    } else {
+                        chain.proceed(request)
+                    }
+                } else {
+                    chain.proceed(request)
+                }
             }
             .addInterceptor(
                 HttpLoggingInterceptor().apply {

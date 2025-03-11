@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,8 +52,7 @@ fun NavGraphBuilder.loginPage(
 
     LaunchedEffect(state.loggedIn) {
         if (state.loggedIn) {
-            navController.navigate("homepage") {
-                // Pop the login screen to prevent back navigation
+            navController.navigate("home") {
                 popUpTo(route) { inclusive = true }
             }
         }
@@ -73,12 +74,12 @@ fun LoginScreen(
     Surface(
         modifier = Modifier.fillMaxSize(),
         content = {
-            when {
+           // when {
                 /*state.error != null ->
                     ErrorScreen(message = state.error.message!!)*/
-                else ->
+           //     else ->
                     LoginColumn(state = state, eventPublisher = eventPublisher)
-            }
+           // }
         })
 }
 
@@ -90,55 +91,65 @@ fun LoginColumn(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            modifier = Modifier.padding(top = 30.dp),
-            fontSize = 36.sp,
-            fontWeight = FontWeight.Bold,
-            text = "Login"
+            text = "Banka 3",
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.Bold
         )
-        Spacer(modifier = Modifier.height(60.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
         OutlinedTextField(
             value = state.email,
             onValueChange = { eventPublisher(LoginContract.LoginUIEvent.TypingEmail(it)) },
-            label = { Text("Email") },
-            isError = state.incorrectEmailFormat,
+            label = { Text("Username") },
+            placeholder = { Text("Enter your username") },
             modifier = Modifier.fillMaxWidth(),
-
-            )
+            shape = RoundedCornerShape(8.dp)
+        )
         if (state.incorrectEmailFormat) {
             Text(
                 text = "Invalid email format",
-                color = Color.Red,
-                fontSize = 20.sp,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.align(Alignment.Start)
             )
         }
+        Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
             value = state.password,
             onValueChange = { eventPublisher(LoginContract.LoginUIEvent.TypingPassword(it)) },
-
             label = { Text("Password") },
+            placeholder = { Text("Enter your password") },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            shape = RoundedCornerShape(8.dp)
+        )
+        /**
+         *
+         * TODO error text here
+         */
+        Spacer(modifier = Modifier.height(24.dp))
 
-            )
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Button(
-                onClick = { eventPublisher(LoginContract.LoginUIEvent.Login) },
-            ) {
-                Text("Login")
-            }
+        Button(
+            onClick = { eventPublisher(LoginContract.LoginUIEvent.Login) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary)
+        ) {
+            Text(text = "Login", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onPrimary)
         }
-        if (state.response!="") {
-            Text(state.response)
-        }
+
+
+      //  if (state.response!="") {
+      //      Text(state.response)
+      //  }
 
     }
 }

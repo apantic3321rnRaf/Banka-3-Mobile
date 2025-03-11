@@ -3,9 +3,9 @@ package com.example.banka_3_mobile.login
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.banka_3_mobile.user.account.datastore.AccountData
 import com.example.banka_3_mobile.user.account.datastore.AccountDataStore
+import com.example.banka_3_mobile.user.jwt.isClientToken
 import com.example.banka_3_mobile.user.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -47,10 +46,11 @@ class LoginViewModel @Inject constructor(
             setState { copy(
                 // fullName = accountDataStore.data.value.fullName,
                 email = accountDataStore.data.value.email,
-                password = accountDataStore.data.value.password,
-                // TODO dodaj i password
-                loggedIn = true) }
-            updateToken()
+                password = accountDataStore.data.value.password) }
+
+            checkOrUpdateToken()
+
+            setState{copy(loggedIn = true)}
         }
 
     }
@@ -81,29 +81,34 @@ class LoginViewModel @Inject constructor(
         else {
             /**
              * TODO provera da li je user klijent (da nije admin ili employee)
+             * DONE???? Uradjeno ali moram proveriti sa ispravnim kredencijalima
              */
             viewModelScope.launch(Dispatchers.IO) {
                 try {
-                    withContext(Dispatchers.IO) {
+                   // withContext(Dispatchers.IO) {
                         val response =
                             userRepository.login(email = state.value.email,
                                 password = state.value.password)
                         //if (accountDataStore.data.value.email == ""
                         //)
+
+                        if (!isClientToken(response.token)) {
+                            setState { copy(error = IllegalArgumentException("Invalid client login credentials")) }
+                            Log.e("raf", state.value.error?.message!!)
+                            return@launch
+                        }
+
                         setState { copy(response = response.token) }
                         accountDataStore.updateProfileData(
                             AccountData(
                                 email = state.value.email,
-                                client_id = "1",
                                 token = response.token,
                                 password = state.value.password
                             )
                         )
-
-
-                    }
+                    
                     setState { copy(loggedIn = true) }
-               //     Log.d("raf", "u datastore je zapisano ${profileDataStore.data.value}")
+              
                 } catch (e: Exception) {
                     setState { copy(error = e) }
                     Log.e("raf", e.message!!)
@@ -116,25 +121,25 @@ class LoginViewModel @Inject constructor(
         return android.util.Patterns.EMAIL_ADDRESS.matcher(state.value.email).matches()
     }
 
-    private fun updateToken() {
+    private fun checkOrUpdateToken() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 withContext(Dispatchers.IO) {
-                    val response =
-                        userRepository.login(email = state.value.email,
-                            password = state.value.password)
-                    Log.d("raf", "Pozvat update token dobijen: ${response.token}")
-                    setState { copy(response = response.token) }
-                    accountDataStore.updateProfileData(
-                        AccountData(
-                            email = state.value.email,
-                            client_id = "1",
-                            token = response.token,
-                            password = state.value.password
+                   // val validity = userRepository.checkToken(accountDataStore.data.value.token)
+                  //  if (!validity) {
+                        val response =
+                            userRepository.login(email = state.value.email,
+                                password = state.value.password)
+                        Log.d("raf", "Pozvan update token dobijen: ${response.token}")
+                        setState { copy(response = response.token) }
+                        accountDataStore.updateProfileData(
+                            AccountData(
+                                email = state.value.email,
+                                token = response.token,
+                                password = state.value.password
+                            )
                         )
-                    )
-
-
+                    //}
                 }
                 setState { copy(loggedIn = true) }
             } catch (e: Exception) {
@@ -144,5 +149,6 @@ class LoginViewModel @Inject constructor(
         }
 
     }
+
 
 }

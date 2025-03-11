@@ -8,6 +8,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -23,8 +25,21 @@ object BankNetworkingModule {
     @Singleton
     @Provides
     @Named("BankOkHttp")
-    fun provideOkHttpClient() : OkHttpClient {
+    fun provideOkHttpClient(
+        accountDataStore: AccountDataStore
+    ) : OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor {
+                    chain ->
+                val token = runBlocking {
+                    accountDataStore.data.first().token
+                }
+                val requestBuilder = chain.request().newBuilder()
+                if (!token.isNullOrEmpty()) {
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
+                }
+                chain.proceed(requestBuilder.build())
+            }
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
                     setLevel(HttpLoggingInterceptor.Level.BODY)

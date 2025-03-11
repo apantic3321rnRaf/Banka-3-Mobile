@@ -1,6 +1,7 @@
 package com.example.banka_3_mobile.user.repository
 
 import com.example.banka_3_mobile.user.api.UserApi
+import com.example.banka_3_mobile.user.model.CheckTokenDto
 import com.example.banka_3_mobile.user.model.ClientGetResponse
 import com.example.banka_3_mobile.user.model.LoginPostRequest
 import com.example.banka_3_mobile.user.model.LoginPostResponse
@@ -16,5 +17,10 @@ class UserRepository @Inject constructor(
 
     suspend fun getUser(): ClientGetResponse {
         return userApi.getUser()
+    }
+
+    suspend fun checkToken(token: String): Boolean {
+        val response = userApi.checkToken(CheckTokenDto(token))
+        return response.isSuccessful
     }
 }

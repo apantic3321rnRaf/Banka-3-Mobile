@@ -3,24 +3,34 @@ package com.example.banka_3_mobile.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import com.example.banka_3_mobile.login.LoginContract
 
 fun NavGraphBuilder.homePage(
     route: String,
@@ -31,10 +41,22 @@ fun NavGraphBuilder.homePage(
 
     val homeViewModel = hiltViewModel<HomeViewModel>(navBackStackEntry)
     val state by homeViewModel.state.collectAsState()
+
+    LaunchedEffect(!state.loggedIn) {
+        if (!state.loggedIn) {
+            navController.navigate("login") {
+                popUpTo(route) { inclusive = true }
+            }
+        }
+    }
+
     HomeScreen(
         state = state,
         eventPublisher = {
             homeViewModel.setEvent(it)
+        },
+        onVerify = {
+            navController.navigate("verify")
         }
     )
 }
@@ -43,30 +65,24 @@ fun NavGraphBuilder.homePage(
 fun HomeScreen(
     state: HomeContract.HomeUiState,
     eventPublisher: (uiEvent: HomeContract.HomeUIEvent) -> Unit,
+    onVerify: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         content = {
-            /*Text("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-            Text("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-            Text("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-            Text("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-            Text("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-            Text("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-            Text("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")*/
 
             when {
-                /*state.error != null ->
-                    ErrorScreen(message = state.error.message!!)*/
-
                     state.fetching ->
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            Text(modifier = Modifier.align(Alignment.Center), text = "Loading account info...")
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator()
                         }
                     state.error != null ->
-                        Text(color = Color.Red, text = "Hello, ${state.client?.lastName}")
+                        Text(color = Color.Red, text = "${state.error}")
                     else -> {
-                        HomeColumn(state = state, eventPublisher = eventPublisher)
+                        HomeColumn(state = state, eventPublisher = eventPublisher, onVerify = onVerify)
                     }
 
 
@@ -78,27 +94,94 @@ fun HomeScreen(
 fun HomeColumn (
     state: HomeContract.HomeUiState,
     eventPublisher: (uiEvent: HomeContract.HomeUIEvent) -> Unit,
+    onVerify: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(24.dp).padding(top = 16.dp),
     ) {
-        Spacer(modifier = Modifier.height(40.dp))
-        Text("Hello, ${state.client?.email}")
-        Spacer(modifier = Modifier.height(60.dp))
-        Text("Hello, ${state.client?.firstName}")
-        Spacer(modifier = Modifier.height(60.dp))
-        Text("Hello, ${state.client?.lastName}")
-        Spacer(modifier = Modifier.height(60.dp))
-        Text("Hello, ${state.client?.jmbg}")
-        Spacer(modifier = Modifier.height(60.dp))
-        Text("Hello, ${state.client?.birthDate}")
-        Spacer(modifier = Modifier.height(60.dp))
-        Text("Hello, ${state.client?.id}")
+        HomeHeader(
+            state = state,
+            eventPublisher = eventPublisher,
+            onVerify = onVerify
+        )
+    }
+}
+
+@Composable
+fun HomeHeader(
+    state: HomeContract.HomeUiState,
+    eventPublisher: (HomeContract.HomeUIEvent) -> Unit,
+    onVerify: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 8.dp).padding(top = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "${state.client?.firstName.orEmpty()} ${state.client?.lastName.orEmpty()}",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = state.client?.username.orEmpty(),
+                fontSize = 18.sp,
+                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                color = Color.Gray
+            )
+            Text(
+                text = state.client?.email.orEmpty(),
+                fontSize = 16.sp,
+                color = Color.Gray
+            )
+        }
+        Button(onClick = { eventPublisher(HomeContract.HomeUIEvent.ShowLogoutDialog) }) {
+            Text("Logout")
+        }
+    }
+    Button(onClick = {
+        onVerify()},
+        colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)) {
+        Text("Verify")
     }
 
+    if (state.showLogoutDialog) {
+        LogoutConfirmationDialog(
+            onConfirm = {
+                eventPublisher(HomeContract.HomeUIEvent.Logout)
+            },
+            onDismiss = {
+                eventPublisher(HomeContract.HomeUIEvent.CloseLogoutDialog)
+            }
+        )
+    }
+}
 
+
+
+@Composable
+fun LogoutConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Logout") },
+        text = { Text("Are you sure you want to log out?") },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Yes")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("No")
+            }
+        }
+    )
 }

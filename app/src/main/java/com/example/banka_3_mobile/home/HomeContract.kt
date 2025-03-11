@@ -4,19 +4,19 @@ import com.example.banka_3_mobile.user.model.ClientGetResponse
 
 interface HomeContract {
     data class HomeUiState (
-        val loggedIn: Boolean = false,
+        val loggedIn: Boolean = true,
         val email: String = "",
         val firstName: String = "",
         val lastName: String = "",
         val client: ClientGetResponse? = null,
         val error: String? = null,
-        val fetching: Boolean = true
+        val fetching: Boolean = true,
+        val showLogoutDialog: Boolean = false
     )
 
     sealed class HomeUIEvent {
+        data object ShowLogoutDialog: HomeUIEvent()
+        data object CloseLogoutDialog: HomeUIEvent()
         data object Logout: HomeUIEvent()
-        data object Verify: HomeUIEvent()
-        //data class TypingEmail(val email: String): HomeUIEvent()
-        //data class TypingPassword(val password: String): HomeUIEvent()
     }
 }
